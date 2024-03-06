@@ -27,7 +27,9 @@ public class Client
 		
 		try {
 			// Set up client socket
-			int port = 9102;
+
+			// i think i should read lowportscanner on how to listen to a range of ports
+			int port = 9100;
 			Socket socket = new Socket("localhost", port);
 			
 			// Set up input and output streams
@@ -39,18 +41,21 @@ public class Client
 
 			
 			
-			// Handle server response
-			String response = in.readLine();
-
-			System.out.println(response);
 			
-			// Close the socket
-			socket.close();
+
+			
+			
+			
 			
 			// Process the server response based on the command
 			switch(cmd){
 				case "list":
-					// Process the list of files received from the server
+					// Handle server response
+					String response;
+					while ((response = in.readLine()) != null){
+						System.out.println(response);
+					}
+
 					break;
 				case "put":
 					if (args.length < 2){
@@ -63,6 +68,9 @@ public class Client
 					System.out.println("Error: Invalid command");
 					System.exit(1);
 			}
+			// Close the socket
+			socket.close();
+
 		} catch (UnknownHostException e) {
 			System.err.println("Error: Unknown host");
 			System.exit(1);

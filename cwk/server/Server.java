@@ -3,6 +3,7 @@ import java.lang.System;
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -41,7 +42,7 @@ public class Server
 	public static void main( String[] args )
 	{
 		
-		int port = 9102;
+		int port = 9100;
 		boolean running = true;
 		try {
 
@@ -69,10 +70,38 @@ public class Server
 							// Tokenising the input
 							String[] cmds = input.split(" ");
 
+							// Command processing
 							switch(cmds[0]){
 								case "list":
 									File folder = new File("serverFiles");
 									File[] files = folder.listFiles();
+
+									StringBuilder sb = new StringBuilder();
+									
+									if (files.length > 0){
+										// Return files to the client
+										sb.append("Listing " + files.length + " file(s):\n");
+										for (File file : files) {
+											sb.append(file.getName()).append('\n');
+										}
+										// Remove last terminator
+										sb.setLength(sb.length() - 1);
+										
+									}
+									else {
+										sb.append("No files present on server.\n");
+									}
+
+									System.out.println(sb.toString());
+
+									writer.println(sb.toString());
+
+									//log(logFile, cmds, clientSocket);
+
+									
+									
+									
+									
 									
 									break;
 
@@ -97,8 +126,8 @@ public class Server
 									break;
 									
 							}
-							// log the request
-							String str_log = "date|time|client IP|request - " + input;
+
+
 							
 							writer.println(input);
 		
@@ -116,4 +145,26 @@ public class Server
 		}
 	
 	}
+
+
+	static void log(File logFile, String cmds[], Socket clientSocket){
+	// get time 
+
+	// log the request
+	String str_log = String.format("%s|%s|%s|%s",
+									new Date(), 
+									clientSocket.getInetAddress().getHostAddress(), 
+									cmds[0], 
+									cmds.length > 1 ? cmds[1] : "");
+
+	try (PrintWriter out = new PrintWriter(new FileWriter(logFile, true))) {
+        out.println(str_log);
+    } catch (IOException e) {
+        System.out.println("Error occurred while writing to the log file: " + e.getMessage());
+    } 
+
+		
+	}
+	
+
 }
