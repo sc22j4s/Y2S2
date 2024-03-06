@@ -17,66 +17,65 @@ public class Client
 	 */
 	public static void main( String[] args )
 	{
-		String cmd;
-		if (args.length > 0 && args[0] != null){
-			cmd = args[0].toLowerCase();
-			System.out.println(cmd);
-		}
-		else{
-			System.out.println("Usage: [cmd] [arg1]");
-			return;
+		if (args.length < 1){
+			System.out.println("Usage: java Client <command>");
+			System.exit(1);
 		}
 
-		String serverAddress = "localhost"; // Replace with the actual server address
-		int serverPort = getPort(); // Call the getPort() method to receive the port number
-
+		String cmd = String.join(" ", args);
+		
+		
 		try {
-			Socket socket = new Socket(serverAddress, serverPort);
-			// Connection successful, perform further operations with the server
+			// Set up client socket
+			int port = 9102;
+			Socket socket = new Socket("localhost", port);
+			
+			// Set up input and output streams
+			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			
+			// Send command to server
+			out.println(cmd);
+
+			
+			
+			// Handle server response
+			String response = in.readLine();
+
+			System.out.println(response);
+			
+			// Close the socket
+			socket.close();
+			
+			// Process the server response based on the command
+			switch(cmd){
+				case "list":
+					// Process the list of files received from the server
+					break;
+				case "put":
+					if (args.length < 2){
+						System.out.println("Usage: java Client put <filename>");
+						System.exit(1);
+					}
+					// Process the response for uploading a file
+					break;
+				default:
+					System.out.println("Error: Invalid command");
+					System.exit(1);
+			}
 		} catch (UnknownHostException e) {
-			System.out.println("Error: Unknown host");
+			System.err.println("Error: Unknown host");
+			System.exit(1);
 		} catch (IOException e) {
-			System.out.println("Error: Cannot establish connection to server");
-		}
-
-		switch(cmd){
-			case "list":
-				// Process the response from the server
-				try {
-					Socket socket = new Socket(serverAddress, serverPort);
-					BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-					String response = in.readLine();
-					System.out.println("Server response: " + response);
-				} catch (IOException e) {
-					System.out.println("Error reading server response: " + e.getMessage());
-				}
-				
-				break;
-			
-			case "put":
-				// Get filename from argument 
-				if(args[1] != null){
-					String filename = args[1]; // no lowercase correction
-				}
-				else{
-					System.out.println("Usage: 'put <filename>'");
-					return; 
-				}
-
-			
-				// Upload file
-				break;
-			default:
-				System.out.println("Command " + cmd + " unrecognised");
+			System.err.println("Error: I/O exception");
+			System.exit(1);
 		}
 		
 		
-	}
 
-
-	static int getPort(){
 		
-			
-		return 1; 
+
+
 	}
+
 }

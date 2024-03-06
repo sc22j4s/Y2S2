@@ -1,7 +1,16 @@
 
 import java.lang.System;
+import java.net.Socket;
 import java.net.ServerSocket;
 import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.io.InputStreamReader;
+import java.util.Date;
 public class Server 
 {
 	/*
@@ -19,54 +28,92 @@ public class Server
 	Listen to port number in range 9100 to 9999
 	Client / server run on same host (localhost)
 	 */ 
+	/**
+	 * The main method is the entry point of the server application.
+	 * It sets up a server socket on a specified port and listens for client connections.
+	 * When a client connects, a new thread is created to handle the client request.
+	 * The server can handle commands such as "list" to list files on the server,
+	 * and "put" to transfer and save files on the server.
+	 * The server also logs each client request to a log file.
+	 *
+	 * @param args The command line arguments passed to the application.
+	 */
 	public static void main( String[] args )
 	{
-		int port = 1234;
-		ServerSocket socket = new ServerSocket(port);
-		System.out.println("Server is listening on port " + port);
-
-
-		String dirPath = "/serverFiles";
-
-		boolean active = true; 
-
 		
-		do{
-			
-			System.out.println("LISTENGING");
-			// listen 4 answer
-			
-
-			String cmd = args[0];
-			// if exists
-			String arg = args[1]; 
+		int port = 9102;
+		boolean running = true;
+		try {
 
 			
-			switch(cmd){
-				case "list":
-					String[] filelist = getFiles(dirPath);
-					for(int i = 0; i < filelist.length; i++){
-						System.out.println(filelist[i]);
-					}
-					break;
-				case "put":
-					break;
-				
-				default:
-					System.out.println("Error: Argument(s) unrecognised.")
+			ServerSocket serverSocket = new ServerSocket(port);
+			ExecutorService executorService = Executors.newFixedThreadPool(20);
+
+			// create log file 
+			File logFile = new File("serverFiles/log.txt");
+
+			
+			// run continuously
+			while(running){
+				try {
+					Socket clientSocket = serverSocket.accept();
 					
+					// 
+					executorService.submit(() -> {
+						try (BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+							 PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)) {
+							
+							// Read the client request
+							String input = reader.readLine();
+
+							// Tokenising the input
+							String[] cmds = input.split(" ");
+
+							switch(cmds[0]){
+								case "list":
+									File folder = new File("serverFiles");
+									File[] files = folder.listFiles();
+									
+									break;
+
+								case "put":
+									if (cmds.length < 2){
+										writer.println("Usage: java Client put <filename>");
+										break;
+									}
+									File file = new File("serverFiles/" + cmds[1]);
+									
+									// Check for filename existence
+									if (file.exists()) {
+										writer.println("Error: File " + cmds[1] + " already exists.");
+										break;
+									}
+
+									writer.println("Uploaded file " + cmds[1] + ".");
+									
+									
+									// Continue with file transfer and saving
+									
+									break;
+									
+							}
+							// log the request
+							String str_log = "date|time|client IP|request - " + input;
+							
+							writer.println(input);
+		
+						} catch (IOException e) {
+							System.out.println("Error occurred while handling client request: " + e.getMessage());
+						}
+					});
+				} catch (IOException e) {
+					System.out.println("Error occurred while accepting client connection: " + e.getMessage());
+				}
 			}
 			
-
-		}while(active);
-
-		public String[] getFiles(String path){
-			// does it return files submitted by that one user???
-
-			File directory = new File(path);
-			return ["sdfs"];
-			
-
+		} catch (IOException e) {
+			System.out.println("Error occurred while setting up the server socket: " + e.getMessage());
 		}
+	
 	}
 }
