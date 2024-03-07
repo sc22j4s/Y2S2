@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.io.InputStreamReader;
 import java.util.Date;
+import java.io.IOException;
 public class Server 
 {
 	/*
@@ -42,7 +43,7 @@ public class Server
 	public static void main( String[] args )
 	{
 		
-		int port = 9100;
+		int port = 9105;
 		boolean running = true;
 		try {
 
@@ -50,8 +51,15 @@ public class Server
 			ServerSocket serverSocket = new ServerSocket(port);
 			ExecutorService executorService = Executors.newFixedThreadPool(20);
 
-			// create log file 
-			File logFile = new File("serverFiles/log.txt");
+			// create log file
+			File logFile = new File("log.txt");
+			if (!logFile.exists()) {
+				try {
+					logFile.createNewFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
 
 			
 			// run continuously
@@ -80,9 +88,14 @@ public class Server
 									
 									if (files.length > 0){
 										// Return files to the client
-										sb.append("Listing " + files.length + " file(s):\n");
+										// todo: change terminator, no backslashes
+										sb.append("Listing " + files.length + " file(s):\0");
 										for (File file : files) {
-											sb.append(file.getName()).append('\n');
+											// Is a text file
+											if (file.getName().endsWith(".txt")) {
+												sb.append(file.getName()).append('\0');
+											}
+											
 										}
 										// Remove last terminator
 										sb.setLength(sb.length() - 1);
@@ -92,16 +105,11 @@ public class Server
 										sb.append("No files present on server.\n");
 									}
 
-									System.out.println(sb.toString());
+									// System.out.println(sb.toString());
 
 									writer.println(sb.toString());
 
 									//log(logFile, cmds, clientSocket);
-
-									
-									
-									
-									
 									
 									break;
 
@@ -112,24 +120,36 @@ public class Server
 									}
 									File file = new File("serverFiles/" + cmds[1]);
 									
+									// Check if file type is .txt
+									if (!file.getName().endsWith(".txt")) {
+										writer.println("Error: File " + cmds[1] + " is not a text file.");
+										break;
+									}
+
 									// Check for filename existence
 									if (file.exists()) {
 										writer.println("Error: File " + cmds[1] + " already exists.");
 										break;
 									}
 
+									// Continue with file transfer and saving
+									try (FileWriter fileWriter = new FileWriter(file)) {
+										String line;
+										while ((line = reader.readLine()) != null && !line.equals("EOF")) {
+											fileWriter.write(line);
+											fileWriter.write(System.lineSeparator());
+										}
+									} catch (IOException e) {
+										writer.println("Error: An error occurred while receiving the file.");
+										break;
+									}
+
 									writer.println("Uploaded file " + cmds[1] + ".");
 									
-									
-									// Continue with file transfer and saving
-									
+									// log
 									break;
 									
 							}
-
-
-							
-							writer.println(input);
 		
 						} catch (IOException e) {
 							System.out.println("Error occurred while handling client request: " + e.getMessage());

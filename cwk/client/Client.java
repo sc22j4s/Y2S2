@@ -4,6 +4,7 @@ import java.net.UnknownHostException;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.FileReader;
 
 public class Client 
 {
@@ -29,41 +30,53 @@ public class Client
 			// Set up client socket
 
 			// i think i should read lowportscanner on how to listen to a range of ports
-			int port = 9100;
+			int port = 9105;
 			Socket socket = new Socket("localhost", port);
 			
 			// Set up input and output streams
 			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			
-			// Send command to server
-			out.println(cmd);
-
-			
-			
 			
 
-			
-			
-			
-			
 			// Process the server response based on the command
-			switch(cmd){
+			switch(args[0]){
 				case "list":
-					// Handle server response
-					String response;
-					while ((response = in.readLine()) != null){
-						System.out.println(response);
-					}
 
+					// Send command to server
+					out.println(cmd);
+					// Handle server response
+					String list_response = in.readLine();
+					
+					// Split into newlines using provided null character
+					String[] lines = list_response.split("\0");
+					for (String line : lines) {
+						System.out.println(line);
+					}
+	
 					break;
 				case "put":
 					if (args.length < 2){
 						System.out.println("Usage: java Client put <filename>");
 						System.exit(1);
 					}
+
+					// Open the file and send each line to the server
+					try (BufferedReader fileReader = new BufferedReader(new FileReader(args[1]))) {
+						String line;
+						while ((line = fileReader.readLine()) != null) {
+							out.println(line);
+						}
+					}
+					
+					out.println("EOF");
+
+					String put_response = in.readLine(); 
+					System.out.println(put_response);
+					
 					// Process the response for uploading a file
 					break;
+				// unrecognised command
 				default:
 					System.out.println("Error: Invalid command");
 					System.exit(1);
