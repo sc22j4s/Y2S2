@@ -1,41 +1,30 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.io.PrintWriter;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStreamReader;
 
 public class Client 
 {
-	/*
-	 * Requirements:
-	 * 1. Accept one of the following cmd args, and performs the stated task:
-	 * 		1.1: list - outputs all files on server/serverFiles
-	 * 		1.2: put <fname> - upload file fname to the server to be added to serverFiles
-	 * 				or return error to say file already exists
-	 * 		1.3: Exit after completing each command
-	 */
 	public static void main( String[] args )
 	{
 		if (args.length < 1){
 			System.out.println("Usage: java Client <command>");
 			System.exit(1);
 		}
-
+		int port = 9757;
 		
 		try {
-			// Set up client socket
-
-			// i think i should read lowportscanner on how to listen to a range of ports
-			int port = 9105;
+			
+			// Set up client socket using localhost and port number
 			Socket socket = new Socket("localhost", port);
 			
 			// Set up input and output streams
 			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			
-			// Send command to server
 			
 			String response;
 			// Process the server response based on the command
@@ -60,8 +49,9 @@ public class Client
 					String filename = args[1];
 					// Check if the file exists in the directory
 					File file = new File(filename);
-					if (!file.exists()) {
-						System.out.println("Client error: Cannot locate file in directory.");
+
+					if (!file.exists()){
+						System.out.println("Client error: File " + filename + " does not exist.");
 						System.exit(1);
 					}
 
@@ -73,8 +63,8 @@ public class Client
 
 					// Send put command and file name to server
 					out.println("put " + filename);
-					
-					// Open the file
+
+					// Open the file for reading
 					try (BufferedReader fileReader = new BufferedReader(new FileReader(filename))) {
 						String line;
 						// Read the file line by line and send each line to the server
@@ -84,14 +74,15 @@ public class Client
 						// Send "EOF" to signal the end of the file
 						out.println("EOF");
 					} catch (IOException e) {
-						System.out.println("Error occurred while sending the file: " + e.getMessage());
+						System.out.println("Client error: Exception occured while sending the file: " + e.getMessage());
 					}
+
 					response = in.readLine();
 					System.out.println(response); 
 					// Process the response for uploading a file
 					break;
 				default:
-					System.out.println("Error: Invalid command");
+					System.out.println("Client error: Invalid command");
 					System.exit(1);
 			}
 			// Close the socket
@@ -101,12 +92,8 @@ public class Client
 			System.err.println("Error: Unknown host");
 			System.exit(1);
 		} catch (IOException e) {
-			System.err.println("Error: Unable to connect to server, may be offline.");
+			System.err.println("Error: Unable to connect to server on port " + port);
 			System.exit(1);
 		}
-		
-
-
 	}
-
 }
